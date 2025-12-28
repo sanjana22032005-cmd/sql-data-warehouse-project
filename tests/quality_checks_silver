@@ -1,0 +1,168 @@
+/* ============================================================
+   Quality Checks
+   ------------------------------------------------------------
+   Script Purpose:
+   This script performs various quality checks for data
+   consistency, accuracy, and standardization across the
+   'silver' schema.
+
+   Checks Included:
+   - Null or duplicate primary keys
+   - Unwanted spaces in string fields
+   - Data standardization and consistency
+   - Invalid date ranges
+   - Data consistency between related fields
+
+   Usage Notes:
+   - Run this script AFTER loading the Silver layer
+   - Investigate and resolve any discrepancies found
+
+   Database : DataWarehouse
+   ============================================================ */
+
+
+---------------------------------------------------------------
+-- CHECKING: silver.crm_cust_info
+---------------------------------------------------------------
+
+-- Check for NULLs or Duplicates in Primary Key
+-- Expectation: No Results
+SELECT
+    cst_id,
+    COUNT(*) AS record_count
+FROM silver.crm_cust_info
+GROUP BY cst_id
+HAVING COUNT(*) > 1
+    OR cst_id IS NULL;
+
+
+-- Check for Unwanted Spaces
+-- Expectation: No Results
+SELECT
+    cst_key
+FROM silver.crm_cust_info
+WHERE cst_key <> TRIM(cst_key);
+
+
+-- Data Standardization & Consistency
+SELECT DISTINCT
+    cst_marital_status
+FROM silver.crm_cust_info;
+
+SELECT DISTINCT
+    cst_gndr
+FROM silver.crm_cust_info;
+
+
+---------------------------------------------------------------
+-- CHECKING: silver.crm_prd_info
+---------------------------------------------------------------
+
+-- Check for NULLs or Duplicates in Primary Key
+-- Expectation: No Results
+SELECT
+    prd_id,
+    COUNT(*) AS record_count
+FROM silver.crm_prd_info
+GROUP BY prd_id
+HAVING COUNT(*) > 1
+    OR prd_id IS NULL;
+
+
+-- Check for Unwanted Spaces
+-- Expectation: No Results
+SELECT
+    prd_key
+FROM silver.crm_prd_info
+WHERE prd_key <> TRIM(prd_key);
+
+
+-- Data Standardization & Consistency
+SELECT DISTINCT
+    prd_line
+FROM silver.crm_prd_info;
+
+
+-- Check for Invalid Date Ranges
+-- Expectation: No Results
+SELECT *
+FROM silver.crm_prd_info
+WHERE prd_end_dt < prd_start_dt;
+
+
+---------------------------------------------------------------
+-- CHECKING: silver.crm_sales_details
+---------------------------------------------------------------
+
+-- Check for NULL Order Numbers
+-- Expectation: No Results
+SELECT *
+FROM silver.crm_sales_details
+WHERE sls_ord_num IS NULL;
+
+
+-- Check for Invalid Date Order
+-- Expectation: No Results
+SELECT *
+FROM silver.crm_sales_details
+WHERE sls_ship_dt < sls_order_dt
+   OR sls_due_dt  < sls_order_dt;
+
+
+-- Check Sales Consistency
+-- Expectation: No Results
+SELECT *
+FROM silver.crm_sales_details
+WHERE sls_sales <> sls_quantity * sls_price;
+
+
+---------------------------------------------------------------
+-- CHECKING: silver.erp_cust_az12
+---------------------------------------------------------------
+
+-- Check for Unwanted Spaces
+-- Expectation: No Results
+SELECT *
+FROM silver.erp_cust_az12
+WHERE cid <> TRIM(cid);
+
+
+-- Data Standardization & Consistency
+SELECT DISTINCT
+    gen
+FROM silver.erp_cust_az12;
+
+
+---------------------------------------------------------------
+-- CHECKING: silver.erp_loc_a101
+---------------------------------------------------------------
+
+-- Data Standardization & Consistency
+SELECT DISTINCT
+    cntry
+FROM silver.erp_loc_a101
+ORDER BY cntry;
+
+
+---------------------------------------------------------------
+-- CHECKING: silver.erp_px_cat_g1v2
+---------------------------------------------------------------
+
+-- Check for Unwanted Spaces
+-- Expectation: No Results
+SELECT *
+FROM silver.erp_px_cat_g1v2
+WHERE cat      <> TRIM(cat)
+   OR subcat   <> TRIM(subcat)
+   OR maintenance <> TRIM(maintenance);
+
+
+-- Data Standardization & Consistency
+SELECT DISTINCT
+    maintenance
+FROM silver.erp_px_cat_g1v2;
+
+
+---------------------------------------------------------------
+-- END OF QUALITY CHECKS
+---------------------------------------------------------------
